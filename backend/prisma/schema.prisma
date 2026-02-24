@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  goals         Goal[]
+  workouts      Workout[]
+  studySessions StudySession[]
+  sleepLogs     SleepLog[]
+  calorieLogs   CalorieLog[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// DualForce app models
+model Goal {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyWorkouts      Int      @default(3)       // target workouts per week
+  weeklyStudyHours    Float    @default(10)      // target study hours per week
+  dailySleepHours     Float    @default(8)       // target sleep hours per night
+  dailyCalorieTarget  Int      @default(2000)    // target calories per day
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Workout {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String                          // e.g. "Morning Run", "Leg Day"
+  type        String                          // e.g. "cardio", "strength", "yoga"
+  durationMin Int                             // duration in minutes
+  notes       String?
+  loggedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model StudySession {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String                          // e.g. "Math", "Physics"
+  durationMin Int                             // duration in minutes
+  notes       String?
+  loggedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model SleepLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hours     Float                             // sleep hours
+  quality   Int      @default(3)             // 1-5 quality rating
+  notes     String?
+  loggedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+model CalorieLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodName    String                          // e.g. "Chicken Rice Bowl"
+  calories    Int                             // calories
+  meal        String   @default("other")     // breakfast, lunch, dinner, snack, other
+  notes       String?
+  loggedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
